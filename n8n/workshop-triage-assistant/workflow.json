@@ -1,0 +1,485 @@
+{
+  "name": "Workshop Triage Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Automation Request",
+        "formDescription": "Tell us what you'd like to automate after today's workshop.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Team",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Legal"
+                  },
+                  {
+                    "option": "Customer Support"
+                  },
+                  {
+                    "option": "Sales"
+                  },
+                  {
+                    "option": "Other"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Task",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Tools",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Confidence",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "1"
+                  },
+                  {
+                    "option": "2"
+                  },
+                  {
+                    "option": "3"
+                  },
+                  {
+                    "option": "4"
+                  },
+                  {
+                    "option": "5"
+                  }
+                ]
+              },
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a228b539-67db-4782-973b-d19c4839b7be",
+      "name": "On form submission",
+      "webhookId": "75b0763d-df5d-4dfc-a523-4c3d6c79001e"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are an internal AI enablement advisor. Read this automation request and return JSON only, with these keys:\n\"recommendation\": one of \"reuse template\", \"build yourself\", \"involve Automation team\"\n\"reason\": one sentence\n\"risk_flags\": array, using only these values if they apply: \"customer data\", \"credentials needed\", \"external sharing\", \"legal or contract data\". Empty array if none.\n\"next_step\": one sentence\n\nTeam: {{ $json.Team }}\nTask: {{ $json.Task }}\nTools: {{ $json.Tools }}\nConfidence with AI tools (1-5): {{ $json.Confidence }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "textFormat": {
+            "textOptions": {
+              "type": "text"
+            }
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        0
+      ],
+      "id": "49291705-e634-47b0-8346-577742c47566",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": null,
+          "name": "",
+          "__aiGatewayManaged": true
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.output[0].content[0].text;\nconst clean = raw.replace(/```json|```/g, '').trim();\nconst ai = JSON.parse(clean);\nreturn {\n  json: {\n    recommendation: ai.recommendation,\n    reason: ai.reason,\n    risk_flags: ai.risk_flags,\n    risk_flags_text: ai.risk_flags.join(', '),\n    next_step: ai.next_step\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        0
+      ],
+      "id": "4412e2bd-9582-4ef6-a131-6c3915d393e6",
+      "name": "Parse AI answer"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "WuSLjtaK8foqpg7v",
+          "mode": "list",
+          "cachedResultName": "triage_log",
+          "cachedResultUrl": "/projects/6zQM4Gc9YXT13lEH/datatables/WuSLjtaK8foqpg7v"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "recommendation": "={{ $json.recommendation }}",
+            "reason": "={{ $json.reason }}",
+            "risk_flags": "={{ $json.risk_flags_text }}",
+            "team": "={{ $('On form submission').item.json.Team }}",
+            "task": "={{ $('On form submission').item.json.Task }}",
+            "tools": "={{ $('On form submission').item.json.Tools }}",
+            "confidence": "={{ $('On form submission').item.json.Confidence }}",
+            "next_step": "={{ $json.next_step }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "team",
+              "displayName": "team",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "task",
+              "displayName": "task",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "tools",
+              "displayName": "tools",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "recommendation",
+              "displayName": "recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "risk_flags",
+              "displayName": "risk_flags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "next_step",
+              "displayName": "next_step",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        816,
+        0
+      ],
+      "id": "589ddb83-bdfe-48a8-9fb1-cd5df11134ce",
+      "name": "Save to log"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "42a70094-73ce-4ef5-ae7c-ded3c5ec88ca",
+              "leftValue": "={{ $('Parse AI answer').item.json.risk_flags }}",
+              "rightValue": "involve Automation team",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "465eeab6-9798-4df7-b0f3-b86aaabe00bd",
+              "leftValue": "={{ $('Parse AI answer').item.json.recommendation }}",
+              "rightValue": "involve Automation team",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "d04e1e4c-2d34-4270-a04b-b180a50a3a87",
+      "name": "Needs review?"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Thanks, we'll review this with you",
+        "completionMessage": "=This one needs a quick review with the Automation team before you build it. Flags: {{ $('Parse AI answer').item.json.risk_flags_text }}. Next step: {{ $('Parse AI answer').item.json.next_step }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1296,
+        -96
+      ],
+      "id": "bebe9df3-b9df-4a6c-8218-b797de49d32d",
+      "name": "Ending: needs review",
+      "webhookId": "5279621b-7acf-4e3f-b53d-960ebaa6a4f1"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "completionTitle": "Your recommendation",
+        "completionMessage": "=Recommendation: {{ $('Parse AI answer').item.json.recommendation }}. Why: {{ $('Parse AI answer').item.json.reason }} Next step: {{ $('Parse AI answer').item.json.next_step }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        1296,
+        96
+      ],
+      "id": "05b23f17-0fb0-431d-93c5-515a915a7966",
+      "name": "Ending: recommendation",
+      "webhookId": "83e68dbb-a196-4370-b8c5-3beab33352db"
+    },
+    {
+      "parameters": {
+        "content": "Workshop attendee submits a request",
+        "height": 96,
+        "width": 208,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -160
+      ],
+      "id": "e3423ecc-a37c-42cd-bfcc-20f8de70837e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "AI triage: reuse template / build yourself / involve Automation team",
+        "height": 96,
+        "width": 464,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        224,
+        -160
+      ],
+      "id": "fd3ec601-d509-46b3-a588-3c0f6b7156a6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Every request logged to track reuse",
+        "height": 96,
+        "width": 176,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        752,
+        -160
+      ],
+      "id": "490e74a5-cd34-4dd4-9ce6-5553285ac7e9",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "Safety gate: customer data, credentials or external sharing go to review",
+        "height": 96,
+        "width": 192,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        992,
+        -160
+      ],
+      "id": "3b4aa5b4-69e5-474e-9199-88ef3d979d7f",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## This is the kind of workflow I’d build live with a Legal or Support team. Form in, AI triage, logged, and a safety gate before anything risky gets built.",
+        "height": 80,
+        "width": 1680
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        288
+      ],
+      "id": "8b6b001a-06db-4038-b473-d09ddccd7f28",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Parse AI answer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI answer": {
+      "main": [
+        [
+          {
+            "node": "Save to log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to log": {
+      "main": [
+        [
+          {
+            "node": "Needs review?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs review?": {
+      "main": [
+        [
+          {
+            "node": "Ending: needs review",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ending: recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "2aae4359-4dec-4302-86da-f3169937bf3d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "44bd6e95c36de2d6c038fc7e2fce11189dffb1c7a9ce730c62112a28c0b44e1b"
+  },
+  "nodeGroups": [],
+  "id": "xuiHBMPboegXru6s",
+  "tags": []
+}
